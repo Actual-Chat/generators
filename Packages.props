@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="latest" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <AspNetCoreVersion>6.0.5</AspNetCoreVersion>
+    <BlazorVersion>$(AspNetCoreVersion)</BlazorVersion>
+    <EntityFrameworkCoreVersion>6.0.5</EntityFrameworkCoreVersion>
+    <EntityFrameworkCoreNpgsqlVersion>6.0.4</EntityFrameworkCoreNpgsqlVersion>
+    <EntityFrameworkCoreMySqlVersion>6.0.1</EntityFrameworkCoreMySqlVersion>
+    <EntityFrameworkCoreInMemoryVersion>$(EntityFrameworkCoreVersion)</EntityFrameworkCoreInMemoryVersion>
+    <MicrosoftExtensionsVersion>6.0.1</MicrosoftExtensionsVersion>
+    <MicrosoftExtensionsPrevVersion>6.0.0</MicrosoftExtensionsPrevVersion>
+    <MySqlVersion>2.1.9</MySqlVersion>
+    <NpgsqlVersion>6.0.3</NpgsqlVersion>
+    <OpenTelemetryNpgsqlVersion>$(EntityFrameworkCoreNpgsqlVersion)</OpenTelemetryNpgsqlVersion>
+    <RedisVersion>2.6.42</RedisVersion>
+    <SignalRVersion>$(AspNetCoreVersion)</SignalRVersion>
+    <StlFusionVersion>2.4.60</StlFusionVersion>
+    <SystemNetHttpJsonVersion>$(AspNetCoreVersion)</SystemNetHttpJsonVersion>
+    <OpenTelemetryVersion>1.2.0</OpenTelemetryVersion>
+    <OpenTelemetryAspNetCoreVersion>1.0.0-rc9</OpenTelemetryAspNetCoreVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="Nupkg Versions">
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.2.0" />
+    
+    <PackageReference Update="Microsoft.Extensions.Configuration.Abstractions" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Configuration" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsPrevVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsPrevVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsPrevVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Logging.Console" Version="$(MicrosoftExtensionsPrevVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.Logging.Debug" Version="$(MicrosoftExtensionsPrevVersion)"/>
+    <PackageReference Update="Microsoft.Extensions.ObjectPool" Version="$(AspNetCoreVersion)"/>
+    <PackageReference Update="Newtonsoft.Json" Version="13.0.*"/>
+    <PackageReference Update="RestEase" Version="1.5.*"/>
+    <PackageReference Update="Stl" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.CommandR" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Plugins" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Redis" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion.Server" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion.Client" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion.Blazor" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion.EntityFramework" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion.EntityFramework.Npgsql" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Fusion.EntityFramework.Redis" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Stl.Testing" Version="$(StlFusionVersion)"/>
+    <PackageReference Update="Swashbuckle.AspNetCore" Version="6.3.1"/>
+    <PackageReference Update="System.Collections.Immutable" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageReference Update="System.Net.Http.Json" Version="$(SystemNetHttpJsonVersion)"/>
+    <PackageReference Update="System.IO.Compression" Version="4.3.*"/>
+    <PackageReference Update="System.Reactive" Version="5.0.*"/>
+    <PackageReference Update="System.Threading.Channels" Version="$(AspNetCoreVersion)"/>
+    <PackageReference Update="Ulid" Version="1.2.6"/>
+    <PackageReference Update="ZString" Version="2.4.*"/>
+
+    <!-- For the build project -->
+    <PackageReference Update="CliWrap" Version="3.4.0"/>
+    <PackageReference Update="Bullseye" Version="3.8.0"/>
+    <PackageReference Update="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1"/>
+    <PackageReference Update="System.Management" Version="6.0.0"/>
+    <PackageReference Update="Crayon" Version="2.0.62"/>
+
+    <!-- Build / test time only -->
+    <PackageReference Update="coverlet.collector" Version="3.1.2"/>
+    <PackageReference Update="FluentAssertions" Version="6.7.*"/>
+    <PackageReference Update="GitHubActionsTestLogger" Version="2.0.0" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.2.0"/>
+    <PackageReference Update="Microsoft.AspNetCore.Components.WebAssembly.Build" Version="$(BlazorVersion)" PrivateAssets="all"/>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="Moq" Version="4.17.2"/> <!-- NOTE(DF): Don't upgrade, it causes integration tests to fail! -->
+    <PackageReference Update="Moq.Autocomplete" Version="0.0.1" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.4.255" PrivateAssets="All" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="xunit" Version="2.4.1"/>
+    <PackageReference Update="Xunit.DependencyInjection" Version="8.5.0"/>
+    <PackageReference Update="Xunit.DependencyInjection.Logging" Version="8.0.1"/>
+    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.5" PrivateAssets="All" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+
+    <!-- Analyzers -->
+    <PackageReference Update="Moq.Analyzers" Version="0.0.9" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="xunit.analyzers" Version="0.10.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.2.32" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="Roslynator.Analyzers" Version="4.1.1" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+    <PackageReference Update="Meziantou.Analyzer" Version="1.0.702" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers"/>
+  </ItemGroup>
+
+</Project>

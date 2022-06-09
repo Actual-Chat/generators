@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>ActualLab.Generators.Tests</AssemblyName>
+    <RootNamespace>ActualLab.Generators.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Generators.Tests.Dependencies\Generators.Tests.Dependencies.csproj" />
+  </ItemGroup>
+
+</Project>

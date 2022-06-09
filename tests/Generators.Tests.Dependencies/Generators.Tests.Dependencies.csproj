@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>ActualLab.Generators.Tests.Dependencies</AssemblyName>
+    <RootNamespace>ActualLab.Generators.Tests</RootNamespace>
+  </PropertyGroup>
+
+</Project>

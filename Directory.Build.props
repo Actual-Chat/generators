@@ -1,0 +1,63 @@
+<Project ToolsVersion="latest" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <RepoRoot>$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)'))</RepoRoot>
+    <SolutionDir Condition="$(SolutionDir) == ''">$(RepoRoot)</SolutionDir>
+    <Authors>Actual Chat, Inc.</Authors>
+    <Company>Actual Chat, Inc.</Company>
+    <Copyright>Copyright Actual Chat, Inc.</Copyright>
+    <PackageProjectUrl>https://github.com/Actual-Chat/generators</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Actual-Chat/generators</RepositoryUrl>
+    <PackageTags>actual_chat actual_lab roslyn generators stl_fusion</PackageTags>
+    <Description>A part of Actual Chat Library.</Description>
+    <NoLogo>true</NoLogo>
+    <!--
+    <ApplicationIcon>$(MSBuildThisFileDirectory)\docs\img\Logo128.jpg</ApplicationIcon>
+    -->
+    <!--
+    <PackageIconUrl>https://github.com/Actual-Chat/generators/master/docs/img/Logo128.jpg</PackageIconUrl>
+    -->
+
+    <!-- Defaults for .csproj -->
+    <OutputType>Library</OutputType>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Features>strict</Features>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <!-- Output path -->
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>$(RepoRoot)artifacts\</OutputPath>
+    <PackageOutputPath>$(RepoRoot)artifacts\nupkg</PackageOutputPath>
+    <!-- Code generation -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- Embedded not recommended yet for libs and nupkg, track this in https://github.com/dotnet/sdk/issues/2679 -->
+    <!-- Also embedded doesn't work with dotnet pack without nuspec or IncludeBuildOutput = false -->
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <GenerateFullPaths Condition="'$(TERM_PROGRAM)' == 'vscode'">true</GenerateFullPaths>
+    <!-- Packaging -->
+    <NoPackageAnalysis>false</NoPackageAnalysis>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+    <!-- NU5048: The 'PackageIconUrl'/'iconUrl' element is deprecated -->
+    <!-- NU5105: The package version uses SemVer 2.0.0 or components of SemVer 1.0.0 that are not supported on legacy clients -->
+    <NoWarn>$(NoWarn);NU5048;NU5105</NoWarn>
+    <WarningsAsErrors>true</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PrereleaseBuild>false</PrereleaseBuild>
+    <LegacyBuild>false</LegacyBuild>
+  </PropertyGroup>
+
+</Project>

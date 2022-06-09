@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="latest" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <BaseIntermediateOutputPath>$(SolutionDir)artifacts\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>$(SolutionDir)artifacts\tests</OutputPath>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <!-- Copy all references to output folder (important for coverage tools) -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- Suppressed warnings -->
+  <PropertyGroup>
+    <!-- [MA0048] File name must match type name -->
+    <!-- [MA0018] Do not declare static members on generic types -->
+    <!-- [MA0026] To-do : ... -->
+    <!-- [MA0046] The delegate must have 2 parameters -->
+    <!-- [MA0016] Prefer return collection abstraction instead of implementation -->
+    <!-- [MA0097] A class that implements IComparable<T> or IComparable should override comparison operators -->
+    <!-- [MA0009] Regular expressions should not be vulnerable to Denial of Service attacks -->
+    <!-- [MA0056] Do not call overridable members in constructor -->
+    <NoWarn>$(NoWarn);MA0048;MA0018;MA0026;MA0046;MA0016;MA0097;MA0009;MA0056</NoWarn>
+    <!-- [VSTHRD200] Use "Async" suffix in names of methods that return an awaitable type. -->
+    <!-- [VSTHRD110] Observe the awaitable result of this method call by awaiting it, assigning to a variable, or passing it to another method. -->
+    <!-- [VSTHRD003] Avoid awaiting or returning a Task representing work that was not started within your context as that can lead to deadlocks. -->
+    <!-- [VSTHRD002] Synchronously waiting on tasks or awaiters may cause deadlocks. Use await or JoinableTaskFactory.Run instead. -->
+    <NoWarn>$(NoWarn);VSTHRD200;VSTHRD110;VSTHRD003;VSTHRD002</NoWarn>
+
+    <!-- Testing-specific -->
+    <!-- [MA0004] Use Task.ConfigureAwait(false) as the current SynchronizationContext is not needed -->
+    <!-- [MA0051] Method is too long (41 lines; maximum allowed: 40)-->
+    <NoWarn>$(NoWarn);MA0004;MA0051</NoWarn>
+  </PropertyGroup>
+
+  <!-- References -->
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Analyzers -->
+  <ItemGroup>
+    <PackageReference Include="xunit.analyzers" />
+    <PackageReference Include="Roslynator.Analyzers" />
+    <PackageReference Include="Meziantou.Analyzer" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" />
+  </ItemGroup>
+  
+  <!-- Generators -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Generators.Abstractions\Generators.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Generators\Generators.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  
+  <!-- Global usings -->
+  <ItemGroup>
+    <Using Include="System.Console" Static="True" />
+    <Using Include="System.Collections" />
+    <Using Include="System.Collections.Immutable" />
+    <Using Include="System.Diagnostics" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Reactive" /> <!-- Mainly for Unit type -->
+    <Using Include="System.Runtime.CompilerServices" />
+    <Using Include="System.Runtime.InteropServices" />
+    <Using Include="System.Runtime.Serialization" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Microsoft.Extensions.Logging.Abstractions" />
+
+    <!-- Testing-related global usings -->
+    <Using Include="FluentAssertions" />
+    <Using Include="Xunit" />
+    <Using Include="Xunit.Abstractions" />
+  </ItemGroup>
+
+</Project>

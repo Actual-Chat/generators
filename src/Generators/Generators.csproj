@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>ActualLab.Generators - Roslyn source generators <!--
+    -->for Stl.Fusion and just some useful ones.<!--
+    --></Description>
+    <AssemblyName>ActualLab.Generators</AssemblyName>
+    <RootNamespace>ActualLab.Generators</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.CodeAnalysis" />
+    <Using Include="Microsoft.CodeAnalysis.CSharp" />
+    <Using Include="Microsoft.CodeAnalysis.CSharp.Syntax" />
+    <Using Include="ActualLab.Generators.Compatibility" />
+    <Using Include="ActualLab.Generators.Internal" />
+    <Using Include="ActualLab.Generators.Internal.DiagnosticsHelpers" Static="true" />
+    <Using Include="System.Text" />
+    <Using Include="System.Collections.Immutable" />
+  </ItemGroup>
+
+  <!-- This ensures the library will be packaged as a source generator when we use `dotnet pack` -->
+  <ItemGroup>
+    <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <!--
+  <PropertyGroup>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GetDependencyTargetPaths" AfterTargets="ResolvePackageDependenciesForBuild">
+    <ItemGroup>
+      <TargetPathWithTargetPlatformMoniker Include="@(ResolvedCompileFileDefinitions)" IncludeRuntimeDependency="false" />
+    </ItemGroup>
+  </Target>
+  -->
+
+  <!--
+  <PropertyGroup>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GetDependencyTargetPaths" AfterTargets="ResolvePackageDependenciesForBuild">
+    <ItemGroup Condition="'$(MSBuildRuntimeType)' == 'Full'">
+      <TargetPathWithTargetPlatformMoniker Include="@(ResolvedCompileFileDefinitions)" IncludeRuntimeDependency="false" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+      <None Include="@(ResolvedCompileFileDefinitions)" Pack="true" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+  -->
+
+</Project>

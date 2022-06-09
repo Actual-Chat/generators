@@ -1,0 +1,52 @@
+*settings.local.json
+src/dotnet/UI.Blazor.Host/wwwroot/dist/
+src/dotnet/ClientApp/wwwroot/dist/
+build/Build.sln
+Nerdbank.GitVersioning.*
+
+# IDE folders & files
+.vs/
+.vscode/
+.idea/
+.history
+.DS_Store
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Build artifacts
+[Aa]rtifacts/
+[Bb]in/
+[oO]bj/
+[tT]mp/
+BenchmarkDotNet.Artifacts/
+StyleCopReport.xml
+*.dotCover
+*.coverage
+*.coveragexml
+
+# Package folders
+[Pp]ackages/
+node_modules/
+
+# Log files & folders
+*.log
+*.binlog
+
+# Visual Studio Profiler & Trace files
+*.psess
+*.vsp
+*.vspx
+*.sap
+*.e2e
+
+# Config files
+*.config.json
+*.config.js
+
+# Test results
+*.trx
