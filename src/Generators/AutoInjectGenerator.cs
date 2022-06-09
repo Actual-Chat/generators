@@ -137,8 +137,8 @@ public class AutoInjectGenerator : IIncrementalGenerator
                     Index = depIndex++,
                     Name = SkipInitializeParameterName,
                     VarName = SkipInitializeParameterName.ToVariableName(),
-                    TypeDef = _skipInitializeType!.ToTypeName(),
-                    Type = _skipInitializeType,
+                    Type = _skipInitializeType!,
+                    TypeName = _skipInitializeType!.ToTypeName(),
                     Kind = DependencyKind.SkipInit,
                     IsOptional = false,
                 });
@@ -155,8 +155,9 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 select new DependencyInfo() {
                     Index = depIndex++,
                     Name = p.Name!, 
-                    VarName = p.Name.ToVariableName(), 
-                    TypeDef = p.TypeDef,
+                    VarName = p.Name.ToVariableName(),
+                    Type = (ITypeSymbol)semanticModel.GetSymbolInfo(p.TypeDef).Symbol!,
+                    TypeName = p.TypeDef,
                     Kind = DependencyKind.PropertyOrField,
                     IsOptional = isOptional,
                 }
@@ -173,7 +174,8 @@ public class AutoInjectGenerator : IIncrementalGenerator
                         Index = depIndex++,
                         Name = name,
                         VarName = name.ToVariableName(),
-                        TypeDef = p.Type.ToTypeName(),
+                        Type = p.Type,
+                        TypeName = p.Type.ToTypeName(),
                         Kind = DependencyKind.Other,
                         IsOptional = p.HasExplicitDefaultValue,
                         IsInitializeArgument = true,
@@ -212,7 +214,10 @@ public class AutoInjectGenerator : IIncrementalGenerator
 
                 if (baseTypeInfo != null)
                     return baseTypeInfo.Dependencies
-                        .Select(d => d with { IsBaseConstructorArgument = true })
+                        .Select(d => d with {
+                            TypeName = d.Type.ToTypeName(),
+                            IsBaseConstructorArgument = true,
+                        })
                         .ToImmutableList();
 
                 var baseCtors = baseType.GetMembers()
@@ -237,8 +242,8 @@ public class AutoInjectGenerator : IIncrementalGenerator
                         Index = baseDepIndex++,
                         Name = name,
                         VarName = name.ToVariableName(),
-                        TypeDef = p.Type.ToTypeName(),
                         Type = p.Type,
+                        TypeName = p.Type.ToTypeName(),
                         Kind = DependencyKind.Other,
                         IsOptional = p.IsOptional,
                         IsBaseConstructorArgument = true,
@@ -274,17 +279,17 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 foreach (var d in dependencies) {
                     var paramRef = IdentifierName(d.VarName);
                     var paramDef = Parameter(Identifier(d.VarName))
-                        .WithType(d.TypeDef);
+                        .WithType(d.TypeName);
                     if (d.IsOptional)
                         paramDef = paramDef
-                            .WithDefault(EqualsValueClause(DefaultExpression(d.TypeDef)));
+                            .WithDefault(EqualsValueClause(DefaultExpression(d.TypeName)));
 
                     var isSkipInitParam = d.Kind == DependencyKind.SkipInit;
                     if (d.IsBaseConstructorArgument) // base(..., [expr])
                         baseCall = baseCall.AddArgumentListArguments(Argument(
                             NameColon(paramRef), 
                             default, 
-                            isSkipInitParam ? DefaultExpression(d.TypeDef) : paramRef));
+                            isSkipInitParam ? DefaultExpression(d.TypeName) : paramRef));
 
                     if (!isSkipInitParam || isSkipInitCtor) // .ctor(..., [param])
                         ctorDef = ctorDef.AddParameterListParameters(paramDef);
@@ -315,7 +320,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
                         ? (StatementSyntax) IfStatement(
                             BinaryExpression(SyntaxKind.NotEqualsExpression,
                                 paramRef,
-                                DefaultExpression(d.TypeDef)),
+                                DefaultExpression(d.TypeName)),
                             assignmentStatementDef)
                         : assignmentStatementDef;
 
@@ -370,8 +375,8 @@ public class AutoInjectGenerator : IIncrementalGenerator
         public int Index { get; init; }
         public string Name { get; init; } = null!;
         public string VarName { get; init; } = null!;
-        public TypeSyntax TypeDef { get; init; } = null!;
-        public ITypeSymbol? Type { get; init; }
+        public TypeSyntax TypeName { get; init; } = null!;
+        public ITypeSymbol Type { get; init; } = null!;
         public DependencyKind Kind { get; init; }
         public bool IsOptional { get; init; }
         public bool IsInitializeArgument { get; init; }

@@ -93,7 +93,7 @@ public static class GenerationExt
         ));
         const string globalSystem = "global::System.";
         return name.StartsWith(globalSystem, StringComparison.Ordinal)
-            ? Simplify(name.Substring(globalSystem.Length))
+            ? Simplify(name.Substring(globalSystem.Length), name)
             : name;
     }
 
@@ -119,8 +119,8 @@ public static class GenerationExt
 
     // Private methods
 
-    private static string Simplify(string name)
-        => name switch {
+    private static string Simplify(string shortName, string fullName)
+        => shortName switch {
             "Boolean" => "bool",
             "Byte" => "byte",
             "SByte" => "sbyte",
@@ -135,6 +135,6 @@ public static class GenerationExt
             "Double" => "double",
             "String" => "string",
             "Object" => "object",
-            _ => name,
+            _ => fullName,
         };
 }
