@@ -26,6 +26,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Generators.Tests.Dependenci
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Generators.Abstractions", "src\Generators.Abstractions\Generators.Abstractions.csproj", "{9234862D-F7BE-4B23-8E22-A164D5E32258}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{41D63048-ED43-43F8-8E24-1F6B528A60E7}"
+	ProjectSection(SolutionItems) = preProject
+		build\Pack.cmd = build\Pack.cmd
+		build\Publish.cmd = build\Publish.cmd
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
