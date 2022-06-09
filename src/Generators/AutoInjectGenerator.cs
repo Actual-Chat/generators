@@ -77,8 +77,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
         var queue = new Queue<(SemanticModel SemanticModel, ClassDeclarationSyntax ClassDef)>(items);
         while (queue.Count > 0) {
             var item = queue.Dequeue();
-            var typeInfo = BuildTypeInfo(item.SemanticModel, item.ClassDef);
-            if (typeInfo == null) {
+            if (!BuildTypeInfo(item.SemanticModel, item.ClassDef, out var typeInfo)) {
                 // Will retry later - we should generate base class code first
                 queue.Enqueue(item);
                 continue;
@@ -89,18 +88,18 @@ public class AutoInjectGenerator : IIncrementalGenerator
             context.ReportDiagnostic(AutoInjectTypeProcessedInfo(item.ClassDef));
         }
 
-        AutoInjectTypeInfo? BuildTypeInfo(SemanticModel semanticModel, ClassDeclarationSyntax classDef)
+        bool BuildTypeInfo(SemanticModel semanticModel, ClassDeclarationSyntax classDef, out AutoInjectTypeInfo typeInfo)
         {
-            if (!classDef.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) {
-                context.ReportDiagnostic(AutoInjectTypeMustBePartialError(classDef));
-                return null;
-            }
-            if (classDef.Members.OfType<ConstructorDeclarationSyntax>().Any()) {
-                context.ReportDiagnostic(AutoInjectTypeHasConstructorError(classDef));
-                return null;
-            }
-
             var classType = (ITypeSymbol) semanticModel.GetDeclaredSymbol(classDef)!;
+            var classFullName = classType.ToFullName();
+            if (processedTypes.TryGetValue(classFullName, out typeInfo) && typeInfo != null)
+                return true;
+
+            if (!classDef.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+                context.ReportDiagnostic(AutoInjectTypeMustBePartialError(classDef));
+            if (classDef.Members.OfType<ConstructorDeclarationSyntax>().Any())
+                context.ReportDiagnostic(AutoInjectTypeHasConstructorError(classDef));
+
             var baseType = (
                 from b in classDef.BaseList?.Types ?? new SeparatedSyntaxList<BaseTypeSyntax>()
                 let bType = semanticModel.GetTypeInfo(b.Type).Type
@@ -113,7 +112,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
 #if DEBUG
                 context.ReportDiagnostic(DebugWarning($"[AutoInject]: postponing '{classType.Name}'."));
 #endif
-                return null;
+                return false;
             }
 
             var isAbstract = classDef.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword));
@@ -125,10 +124,8 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 var initMethodIsProtected = initMethod.DeclaredAccessibility == Accessibility.Protected
                     || initMethod.DeclaredAccessibility == Accessibility.ProtectedOrInternal;
                 var initMethodIsPrivate = !(initMethodIsPublic || initMethodIsProtected);
-                if (initMethodIsPublic || (initMethodIsPrivate && !isSealed)) {
+                if (initMethodIsPublic || (initMethodIsPrivate && !isSealed))
                     context.ReportDiagnostic(AutoInjectTypeHasWrongInitializeError(classDef));
-                    return null;
-                }
             }
             else {
                 initMethod = GetInitializeMethod(baseType);
@@ -185,7 +182,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 .DistinctBy(d => d.VarName)
                 .ToList();
 
-            var typeInfo = new AutoInjectTypeInfo() {
+            typeInfo = new AutoInjectTypeInfo() {
                 ClassDef = classDef,
                 ClassType = classType,
                 BaseType = baseType,
@@ -196,7 +193,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 InitMethod = initMethod,
             };
             processedTypes[classType.ToFullName()] = typeInfo;
-            return typeInfo;
+            return true;
 
             ImmutableList<DependencyInfo> GetBaseDependencies()
             {
