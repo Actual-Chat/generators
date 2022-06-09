@@ -27,8 +27,9 @@ public class AutoInjectGenerator : IIncrementalGenerator
     }
 
     private bool CouldBeAugmented(SyntaxNode node, CancellationToken cancellationToken) 
-        => node is ClassDeclarationSyntax s 
-            && s.Parent is FileScopedNamespaceDeclarationSyntax or NamespaceDeclarationSyntax; // Top-level type
+        => node is ClassDeclarationSyntax {
+            Parent: FileScopedNamespaceDeclarationSyntax or NamespaceDeclarationSyntax
+        }; // Top-level type
 
     private (SemanticModel SemanticModel, ClassDeclarationSyntax? ClassDef) 
         MustAugment(GeneratorSyntaxContext context, CancellationToken cancellationToken)
@@ -107,8 +108,8 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 select bType
             ).FirstOrDefault();
             var baseTypeFullName = baseType?.ToFullName() ?? "";
-            processedTypes!.TryGetValue(baseTypeFullName, out var baseTypeInfo);
-            if (baseTypeInfo == null && knownTypes!.Contains(baseTypeFullName)) {
+            processedTypes.TryGetValue(baseTypeFullName, out var baseTypeInfo);
+            if (baseTypeInfo == null && knownTypes.Contains(baseTypeFullName)) {
 #if DEBUG
                 context.ReportDiagnostic(DebugWarning($"[AutoInject]: postponing '{classType.Name}'."));
 #endif
@@ -301,7 +302,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
                     var lValue = MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression, 
                         ThisExpression(), 
-                        IdentifierName(d.Name!));
+                        IdentifierName(d.Name));
 
                     var assignmentStatementDef = ExpressionStatement(
                         AssignmentExpression(
