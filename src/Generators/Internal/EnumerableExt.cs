@@ -1,7 +1,15 @@
-namespace ActualLab.Generators.Compatibility;
+namespace ActualLab.Generators.Internal;
 
-public static class EnumerableCompatExt
+public static class EnumerableExt
 {
+    public static IEnumerable<AutoInjectGenerator.DependencyInfo> Reindex(
+        this IEnumerable<AutoInjectGenerator.DependencyInfo> source)
+    {
+        var index = 0;
+        foreach (var dependencyInfo in source)
+            yield return dependencyInfo with { Index = index++ };
+    }
+
 #if NETSTANDARD2_0
 
     public static HashSet<TSource> ToHashSet<TSource>(this IEnumerable<TSource> source)

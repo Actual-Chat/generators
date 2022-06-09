@@ -131,17 +131,18 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 initMethod = GetInitializeMethod(baseType);
             }
 
-            var deps = new List<DependencyInfo>() {
+            var depIndex = 0;
+            var deps = ImmutableHashSet<DependencyInfo>.Empty.Add(
                 new() {
+                    Index = depIndex++,
                     Name = SkipInitializeParameterName,
                     VarName = SkipInitializeParameterName.ToVariableName(),
                     TypeDef = _skipInitializeType!.ToTypeName(),
                     Type = _skipInitializeType,
                     Kind = DependencyKind.SkipInit,
                     IsOptional = false,
-                }
-            };
-            deps.AddRange(
+                });
+            deps = deps.Union(
                 from m in classDef.Members 
                 where !m.Modifiers.Any(x => x.IsKind(SyntaxKind.StaticKeyword)) 
                 let depAttrDef = semanticModel.GetAttribute(_injectedAttributeType!, m.AttributeLists) 
@@ -152,6 +153,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 let p = m.GetNameAndType()
                 where p.Name is not null
                 select new DependencyInfo() {
+                    Index = depIndex++,
                     Name = p.Name!, 
                     VarName = p.Name.ToVariableName(), 
                     TypeDef = p.TypeDef,
@@ -161,26 +163,30 @@ public class AutoInjectGenerator : IIncrementalGenerator
             );
 
             if (initMethod != null) {
-                deps.AddRange(  
+                deps = deps.Union(  
                     from p in initMethod.Parameters
                     let name = p.Name
                     where name is not null
+                    let varName = name.ToVariableName()
+                    // ReSharper disable once AccessToModifiedClosure
                     select new DependencyInfo() {
+                        Index = depIndex++,
                         Name = name,
                         VarName = name.ToVariableName(),
                         TypeDef = p.Type.ToTypeName(),
-                        Kind = DependencyKind.Initialize,
+                        Kind = DependencyKind.Other,
                         IsOptional = p.HasExplicitDefaultValue,
-                    });
+                        IsInitializeArgument = true,
+                    }
+                );
             }
 
-            deps.AddRange(GetBaseDependencies());
-
-            deps = deps
-                .OrderBy(d => d.IsOptional)
-                .ThenBy(d => d.Kind)
-                .DistinctBy(d => d.VarName)
-                .ToList();
+            var baseDeps = GetBaseDependencies();
+            foreach (var baseDep in baseDeps) {
+                deps = deps.TryGetValue(baseDep, out var ownDep) 
+                    ? deps.Remove(ownDep).Add(ownDep with { IsBaseConstructorArgument = true }) 
+                    : deps.Add(baseDep with { Index = depIndex++ });
+            }
 
             typeInfo = new AutoInjectTypeInfo() {
                 ClassDef = classDef,
@@ -189,7 +195,11 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 BaseTypeInfo = baseTypeInfo,
                 IsSealed = isSealed,
                 IsAbstract = isAbstract,
-                Dependencies = deps.ToImmutableList(),
+                Dependencies = deps
+                    .OrderBy(d => d.IsOptional)
+                    .ThenBy(d => d.Index)
+                    .Reindex()
+                    .ToImmutableList(),
                 InitMethod = initMethod,
             };
             processedTypes[classType.ToFullName()] = typeInfo;
@@ -202,7 +212,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
 
                 if (baseTypeInfo != null)
                     return baseTypeInfo.Dependencies
-                        .Select(d => d with { Kind = DependencyKind.BaseClass })
+                        .Select(d => d with { IsBaseConstructorArgument = true })
                         .ToImmutableList();
 
                 var baseCtors = baseType.GetMembers()
@@ -218,17 +228,20 @@ public class AutoInjectGenerator : IIncrementalGenerator
                 if (baseCtor == null)
                     return ImmutableList<DependencyInfo>.Empty;
 
+                var baseDepIndex = 0;
                 return (  
                     from p in baseCtor.Parameters
                     let name = p.Name
                     where name is not null
                     select new DependencyInfo() {
+                        Index = baseDepIndex++,
                         Name = name,
                         VarName = name.ToVariableName(),
                         TypeDef = p.Type.ToTypeName(),
                         Type = p.Type,
-                        Kind = DependencyKind.BaseClass,
+                        Kind = DependencyKind.Other,
                         IsOptional = p.IsOptional,
+                        IsBaseConstructorArgument = true,
                     }).ToImmutableList();
             }
         }
@@ -237,14 +250,6 @@ public class AutoInjectGenerator : IIncrementalGenerator
         {
             var classDef = typeInfo.ClassDef;
             var dependencies = typeInfo.Dependencies;
-            var baseVarNames = dependencies
-                .Where(d => d.Kind is DependencyKind.BaseClass)
-                .Select(d => d.VarName)
-#if !NETSTANDARD2_0
-                .ToHashSet(StringComparer.Ordinal);
-#else
-                .ToHashSet();
-#endif
 
             var partialClassDef = ClassDeclaration(classDef.Identifier.Text)
                 .WithTypeParameterList(classDef.TypeParameterList)
@@ -275,7 +280,7 @@ public class AutoInjectGenerator : IIncrementalGenerator
                             .WithDefault(EqualsValueClause(DefaultExpression(d.TypeDef)));
 
                     var isSkipInitParam = d.Kind == DependencyKind.SkipInit;
-                    if (baseVarNames.Contains(d.VarName)) // base(..., [expr])
+                    if (d.IsBaseConstructorArgument) // base(..., [expr])
                         baseCall = baseCall.AddArgumentListArguments(Argument(
                             NameColon(paramRef), 
                             default, 
@@ -284,10 +289,10 @@ public class AutoInjectGenerator : IIncrementalGenerator
                     if (!isSkipInitParam || isSkipInitCtor) // .ctor(..., [param])
                         ctorDef = ctorDef.AddParameterListParameters(paramDef);
 
-                    if (d.Kind is DependencyKind.SkipInit or DependencyKind.BaseClass)
+                    if (d.Kind is DependencyKind.SkipInit)
                         continue; // Nothing else to do with @skipInit
 
-                    if (d.Kind == DependencyKind.Initialize) {
+                    if (d.IsInitializeArgument) {
                         initializeCall = initializeCall?.AddArgumentListArguments(
                             Argument(NameColon(paramRef), default, paramRef));
                         continue;
@@ -358,15 +363,30 @@ public class AutoInjectGenerator : IIncrementalGenerator
         public IMethodSymbol? InitMethod { get; init; }
     } 
 
-    public enum DependencyKind { SkipInit, Initialize, PropertyOrField, BaseClass }
+    public enum DependencyKind { SkipInit, PropertyOrField, Other }
 
     public sealed record DependencyInfo
     {
+        public int Index { get; init; }
         public string Name { get; init; } = null!;
         public string VarName { get; init; } = null!;
         public TypeSyntax TypeDef { get; init; } = null!;
         public ITypeSymbol? Type { get; init; }
         public DependencyKind Kind { get; init; }
         public bool IsOptional { get; init; }
+        public bool IsInitializeArgument { get; init; }
+        public bool IsBaseConstructorArgument { get; init; }
+
+        public bool Equals(DependencyInfo? other)
+        {
+            if (ReferenceEquals(null, other))
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return StringComparer.Ordinal.Equals(VarName, other.VarName);
+        }
+
+        public override int GetHashCode() 
+            => StringComparer.Ordinal.GetHashCode(VarName);
     }
 }
