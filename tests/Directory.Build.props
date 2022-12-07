@@ -3,7 +3,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <BaseIntermediateOutputPath>$(SolutionDir)artifacts\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <OutputPath>$(SolutionDir)artifacts\tests</OutputPath>
     <IsPackable>false</IsPackable>
@@ -60,7 +60,7 @@
     <PackageReference Include="Meziantou.Analyzer" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" />
   </ItemGroup>
-  
+
   <!-- Generators -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\Generators.Abstractions\Generators.Abstractions.csproj" />
@@ -69,7 +69,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  
+
   <!-- Global usings -->
   <ItemGroup>
     <Using Include="System.Console" Static="True" />
