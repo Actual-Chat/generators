@@ -6,7 +6,7 @@
 // ReSharper disable ArrangeConstructorOrDestructorBody
 namespace ActualLab.Generators;
 
-public class ArgumentList
+public record ArgumentList
 {
     public readonly ArgumentList Empty = new ();
 
@@ -48,7 +48,7 @@ public class ArgumentList
        argumentDeclaration += ("T" + t + " item" + t);
    }
 #>
-public class ArgumentList<<#=argumentTypes#>> : ArgumentList
+public record ArgumentList<<#=argumentTypes#>> : ArgumentList
 {
 <#for (int t = 0; t < i; t++) {#>
     public T<#=t#> Item<#=t#> { get; }

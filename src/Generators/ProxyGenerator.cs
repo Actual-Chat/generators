@@ -5,46 +5,53 @@ namespace ActualLab.Generators;
 [Generator]
 public class ProxyGenerator : IIncrementalGenerator
 {
-    private static readonly string AbstractionsNamespaceName = "ActualLab.Generators";
-    private static readonly string GenerateProxyAttributeFullName = $"{AbstractionsNamespaceName}.GenerateProxyAttribute";
-
+    private const string AbstractionsNamespaceName = "ActualLab.Generators";
+    private const string GenerateProxyAttributeFullName = $"{AbstractionsNamespaceName}.GenerateProxyAttribute";
     private const string ProxyInterfaceTypeName = "IProxy";
     private const string ProxyInterfaceBindMethodName = "Bind";
     private const string ProxyClassSuffix = "Proxy";
     private const string InterceptorTypeName = "Interceptor";
     private const string InterceptorPropertyName = "Interceptor";
+    private const string InterceptMethodName = "Intercept";
+    private const string ArgumentListTypeName = "ArgumentList";
+    private const string ArgumentListNewMethodName = "New";
+    private const string SubjectFieldName = "_subject";
 
     private ITypeSymbol? _generateProxyAttributeType;
+    private readonly QualifiedNameSyntax _actualLabNs;
+
+    public ProxyGenerator()
+        => _actualLabNs = QualifiedName(IdentifierName("ActualLab"), IdentifierName("Generators"));
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var items = context.SyntaxProvider
             .CreateSyntaxProvider(CouldBeAugmented, MustAugment)
-            .Where(i => i.ClassDef != null)
+            .Where(i => i.TypeDef != null)
             .Collect();
         context.RegisterSourceOutput(items, Generate!);
     }
 
     private bool CouldBeAugmented(SyntaxNode node, CancellationToken cancellationToken)
-        => node is ClassDeclarationSyntax {
+        => node is ClassDeclarationSyntax or InterfaceDeclarationSyntax {
             Parent: FileScopedNamespaceDeclarationSyntax or NamespaceDeclarationSyntax
         }; // Top-level type
 
-    private (SemanticModel SemanticModel, ClassDeclarationSyntax? ClassDef)
+    private (SemanticModel SemanticModel, TypeDeclarationSyntax? TypeDef)
         MustAugment(GeneratorSyntaxContext context, CancellationToken cancellationToken)
     {
         var semanticModel = context.SemanticModel;
         var compilation = semanticModel.Compilation;
         _generateProxyAttributeType ??= compilation.GetTypeByMetadataName(GenerateProxyAttributeFullName)!;
 
-        var classDef = (ClassDeclarationSyntax) context.Node;
-        var generateCtorAttrDef = semanticModel.GetAttribute(_generateProxyAttributeType!, classDef.AttributeLists);
-        return generateCtorAttrDef == null ? default : (semanticModel, classDef);
+        var typeDef = (TypeDeclarationSyntax) context.Node;
+        var generateCtorAttrDef = semanticModel.GetAttribute(_generateProxyAttributeType!, typeDef.AttributeLists);
+        return generateCtorAttrDef == null ? default : (semanticModel, typeDef);
     }
 
     private void Generate(
         SourceProductionContext context,
-        ImmutableArray<(SemanticModel SemanticModel, ClassDeclarationSyntax ClassDef)> items)
+        ImmutableArray<(SemanticModel SemanticModel, TypeDeclarationSyntax TypeDef)> items)
     {
         if (items.Length == 0)
             return;
@@ -64,50 +71,54 @@ public class ProxyGenerator : IIncrementalGenerator
 
     private void GenerateImpl(
         SourceProductionContext context,
-        ImmutableArray<(SemanticModel SemanticModel, ClassDeclarationSyntax ClassDef)> items)
+        ImmutableArray<(SemanticModel SemanticModel, TypeDeclarationSyntax TypeDef)> items)
     {
         foreach (var item in items) {
-            var typeInfo = BuildTypeInfo(item.SemanticModel, item.ClassDef);
-            var code = GenerateCode(context, item.SemanticModel, typeInfo);
-            var classType = (ITypeSymbol)item.SemanticModel.GetDeclaredSymbol(item.ClassDef)!;
-            context.AddSource($"{classType.ContainingNamespace}.{classType.Name}Proxy.g.cs", code);
-            context.ReportDiagnostic(AutoInjectTypeProcessedInfo(item.ClassDef));
+            var code = GenerateCode(context, item.SemanticModel, item.TypeDef);
+            var typeType = (ITypeSymbol)item.SemanticModel.GetDeclaredSymbol(item.TypeDef)!;
+            context.AddSource($"{typeType.ContainingNamespace}.{typeType.Name}Proxy.g.cs", code);
+            context.ReportDiagnostic(GenerateProxyTypeProcessedInfo(item.TypeDef));
         }
     }
 
-    private ProxyTypeInfo BuildTypeInfo(SemanticModel itemSemanticModel, ClassDeclarationSyntax itemClassDef)
+    private string GenerateCode(SourceProductionContext context, SemanticModel semanticModel, TypeDeclarationSyntax typeDef)
     {
-        var typeInfo = new ProxyTypeInfo {
-            ClassDef = itemClassDef
-        };
-        return typeInfo;
-    }
+        context.ReportDiagnostic(DebugWarning($"About to generate proxy for '{typeDef.Identifier.Text}'."));
+        var originalClassDef = typeDef as ClassDeclarationSyntax;
+        var ns = typeDef.GetNamespaceName();
 
-    private string GenerateCode(SourceProductionContext context, SemanticModel semanticModel, ProxyTypeInfo typeInfo)
-    {
-        var originalClassDef = typeInfo.ClassDef;
-        var ns = originalClassDef.GetNamespaceName();
-        var actualLabNs = QualifiedName(IdentifierName("ActualLab"), IdentifierName("Generators"));
-
-        var baseClassNameSyntax = IdentifierName(originalClassDef.Identifier.Text);
-        var baseClassFullNameSyntax = ns != null ? (NameSyntax)QualifiedName(ns, baseClassNameSyntax) : baseClassNameSyntax;
-        var classDef = ClassDeclaration(originalClassDef.Identifier.Text + ProxyClassSuffix)
+        var originalTypeNameSyntax = IdentifierName(typeDef.Identifier.Text);
+        var originalTypeFullNameSyntax = ns != null ? (NameSyntax)QualifiedName(ns, originalTypeNameSyntax) : originalTypeNameSyntax;
+        var classDef = ClassDeclaration(originalTypeNameSyntax.Identifier.Text + ProxyClassSuffix)
             .WithBaseList(BaseList(CommaSeparatedList<BaseTypeSyntax>(
-                SimpleBaseType(baseClassFullNameSyntax),
-                SimpleBaseType(QualifiedName(actualLabNs, IdentifierName(ProxyInterfaceTypeName))))
-            ))
-            .WithTypeParameterList(originalClassDef.TypeParameterList)
-            .AddModifiers(Token(SyntaxKind.PartialKeyword));
+                SimpleBaseType(originalTypeFullNameSyntax),
+                SimpleBaseType(QualifiedName(_actualLabNs, IdentifierName(ProxyInterfaceTypeName))))
+            ));
+        if (originalClassDef != null) {
+            classDef = classDef
+                .AddModifiers(Token(SyntaxKind.PublicKeyword))
+                .WithTypeParameterList(originalClassDef.TypeParameterList);
+        }
+        else {
+            classDef = classDef
+                .AddModifiers(Token(SyntaxKind.PublicKeyword));
+        }
 
         var classMembers = new List<MemberDeclarationSyntax>();
 
-        AddMethodOverrides(classMembers, context, originalClassDef, actualLabNs);
+        AddMethodOverrides(classMembers, context, typeDef);
 
         context.ReportDiagnostic(DebugWarning($"{classMembers.Count} class members added for method overrides."));
 
-        AddInterceptor(classMembers, actualLabNs);
+        AddInterceptor(classMembers);
 
-        AddConstructors(classMembers, context, originalClassDef, classDef.Identifier.Text);
+        if (originalClassDef != null) {
+            AddClassConstructors(classMembers, originalClassDef, classDef.Identifier.Text);
+        }
+        else {
+            AddSubjectField(classMembers, originalTypeFullNameSyntax);
+            AddInterfaceProxyConstructor(classMembers, originalTypeFullNameSyntax, classDef.Identifier.Text);
+        }
 
         if (classMembers.Count > 0)
             classDef = classDef.WithMembers(List(classMembers));
@@ -117,9 +128,7 @@ public class ProxyGenerator : IIncrementalGenerator
         var syntaxRoot = semanticModel.SyntaxTree.GetRoot();
         var unit = CompilationUnit()
             .AddUsings(syntaxRoot.ChildNodes().OfType<UsingDirectiveSyntax>().ToArray())
-            .AddMembers(
-                FileScopedNamespaceDeclaration(originalClassDef.GetNamespaceName()!)
-                    .AddMembers(classDef));
+            .AddMembers(FileScopedNamespaceDeclaration(ns!).AddMembers(classDef));
 
         var code = unit.NormalizeWhitespace().ToFullString();
         return "// Generated code" + Environment.NewLine +
@@ -127,7 +136,43 @@ public class ProxyGenerator : IIncrementalGenerator
             code;
     }
 
-    private static void AddConstructors(ICollection<MemberDeclarationSyntax> classMembers, SourceProductionContext context,
+    private void AddInterfaceProxyConstructor(List<MemberDeclarationSyntax> classMembers, NameSyntax interfaceFullNameSyntax, string className)
+    {
+        const string subjectCtorParameterName = "subject";
+        var ctorDef = ConstructorDeclaration(Identifier(className))
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .WithParameterList(
+                ParameterList(
+                    SingletonSeparatedList(
+                        Parameter(Identifier(subjectCtorParameterName))
+                            .WithType(interfaceFullNameSyntax))))
+            .WithBody(
+                Block(
+                    SingletonList<StatementSyntax>(
+                        ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    ThisExpression(),
+                                    IdentifierName(SubjectFieldName)),
+                                IdentifierName(subjectCtorParameterName))))));
+        classMembers.Add(ctorDef);
+    }
+
+    private void AddSubjectField(ICollection<MemberDeclarationSyntax> classMembers, NameSyntax interfaceFullNameSyntax)
+    {
+        var subjectField = FieldDeclaration(
+                VariableDeclaration(interfaceFullNameSyntax)
+                    .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier(SubjectFieldName)))))
+            .WithModifiers(TokenList(new[] {
+                        Token(SyntaxKind.PrivateKeyword),
+                        Token(SyntaxKind.ReadOnlyKeyword)
+                    }));
+        classMembers.Add(subjectField);
+    }
+
+    private static void AddClassConstructors(ICollection<MemberDeclarationSyntax> classMembers,
         ClassDeclarationSyntax originalClassDef, string className)
     {
         foreach (var originalCtor in originalClassDef.Members.OfType<ConstructorDeclarationSyntax>()) {
@@ -149,56 +194,62 @@ public class ProxyGenerator : IIncrementalGenerator
         }
     }
 
-    private static void AddMethodOverrides(
+    private void AddMethodOverrides(
         ICollection<MemberDeclarationSyntax> classMembers,
         SourceProductionContext context,
-        ClassDeclarationSyntax originalClassDef,
-        QualifiedNameSyntax actualLabNs)
+        TypeDeclarationSyntax originalClassDef)
     {
-        const string argumentListTypeName = "ArgumentList";
-        const string argumentListNewMethodName = "New";
-        const string interceptMethodName = "Intercept";
-
         var cachedInterceptedIndex = 0;
+        var isInterfaceProxy = originalClassDef is InterfaceDeclarationSyntax;
+        var methodSubjectCall = !isInterfaceProxy
+            ? (ExpressionSyntax)BaseExpression() : IdentifierName("_subject");
 
-        foreach (var originalMethod in originalClassDef.Members.OfType<MethodDeclarationSyntax>()) {
-            var originalMethodModifiers = originalMethod.Modifiers;
-            var isPublic = originalMethodModifiers.Any(c => c.IsKind(SyntaxKind.PublicKeyword));
-            var isProtected = originalMethodModifiers.Any(c => c.IsKind(SyntaxKind.ProtectedKeyword));
-            var isPrivate = !isPublic && !isProtected;
-            if (isPrivate)
-                continue;
-            var isVirtual = originalMethodModifiers.Any(c => c.IsKind(SyntaxKind.VirtualKeyword));
-            if (!isVirtual) {
-                context.ReportDiagnostic(DebugWarning($"method '{originalMethod.ToString()}' is not virtual and not private."));
-                continue;
+        foreach (var method in originalClassDef.Members.OfType<MethodDeclarationSyntax>()) {
+            var modifiers = method.Modifiers;
+            SyntaxToken[] methodModifiers;
+            if (!isInterfaceProxy) {
+                var isPublic = modifiers.Any(c => c.IsKind(SyntaxKind.PublicKeyword));
+                var isProtected = modifiers.Any(c => c.IsKind(SyntaxKind.ProtectedKeyword));
+                var isPrivate = !isPublic && !isProtected;
+                if (isPrivate)
+                    continue;
+                var isVirtual = modifiers.Any(c => c.IsKind(SyntaxKind.VirtualKeyword));
+                if (!isVirtual) {
+                    context.ReportDiagnostic(DebugWarning($"method '{method.ToString()}' is not virtual and not private."));
+                    continue;
+                }
+                var accessModifier = isPublic ? Token(SyntaxKind.PublicKeyword)
+                    : isProtected ? Token(SyntaxKind.ProtectedKeyword)
+                    : throw new InvalidOperationException("Wrong access modifer");
+                methodModifiers = new [] {
+                    accessModifier, Token(SyntaxKind.SealedKeyword), Token(SyntaxKind.OverrideKeyword)
+                };
+            }
+            else {
+                methodModifiers = new [] { Token(SyntaxKind.PublicKeyword) };
             }
 
-            var fieldName = "_cachedIntercepted" + cachedInterceptedIndex++;
+            var cachedInterceptedFieldName = "_cachedIntercepted" + cachedInterceptedIndex++;
 
             var fieldType = NullableType(
                 GenericName(Identifier("Func"))
                     .WithTypeArgumentList(
                         TypeArgumentList(
                             CommaSeparatedList(
-                                  QualifiedName(actualLabNs, IdentifierName(argumentListTypeName)),
-                                originalMethod.ReturnType
+                                  QualifiedName(_actualLabNs, IdentifierName(ArgumentListTypeName)),
+                                method.ReturnType
                             ))));
-            var cachedInterceptedField = FieldDeclaration(VariableDeclaration(fieldType)
-                    .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier(fieldName)))))
-                .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
+            var cachedInterceptedField = FieldDeclaration(
+                VariableDeclaration(fieldType)
+                    .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier(cachedInterceptedFieldName))))
+                ).WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
 
-            var accessModifier = isPublic ? Token(SyntaxKind.PublicKeyword)
-                : isProtected ? Token(SyntaxKind.ProtectedKeyword)
-                : throw new InvalidOperationException("Wrong access modifer");
 
-            var typedArgsVarGenericArguments = new List<TypeSyntax>();
-            foreach (var parameter in originalMethod.ParameterList.Parameters) {
-                typedArgsVarGenericArguments.Add(parameter.Type!);
-            }
+            var typedArgsVarGenericArguments = method.ParameterList
+                .Parameters.Select(p => p.Type!).ToArray();
 
-            var typeArgsVariableType = QualifiedName(actualLabNs,
-                GenericName(Identifier(argumentListTypeName))
+            var typeArgsVariableType = QualifiedName(_actualLabNs,
+                GenericName(Identifier(ArgumentListTypeName))
                         .WithTypeArgumentList(
                             TypeArgumentList(CommaSeparatedList(typedArgsVarGenericArguments))));
 
@@ -207,7 +258,7 @@ public class ProxyGenerator : IIncrementalGenerator
                     CastExpression(typeArgsVariableType, IdentifierName("args")
                     )));
             var baseCallArguments = new List<SyntaxNodeOrToken>();
-            for (int itemId = 0; itemId < originalMethod.ParameterList.Parameters.Count; itemId++) {
+            for (int itemId = 0; itemId < method.ParameterList.Parameters.Count; itemId++) {
                 if (baseCallArguments.Count > 0)
                     baseCallArguments.Add(Token(SyntaxKind.CommaToken));
                 baseCallArguments.Add(Argument(
@@ -225,15 +276,19 @@ public class ProxyGenerator : IIncrementalGenerator
                     InvocationExpression(
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
-                                BaseExpression(),
-                                IdentifierName(originalMethod.Identifier.Text)))
+                                methodSubjectCall,
+                                IdentifierName(method.Identifier.Text)))
                         .WithArgumentList(ArgumentList(SeparatedList<ArgumentSyntax>(baseCallArguments)))));
 
+            var lambdaExpression = SimpleLambdaExpression(Parameter(Identifier("args")))
+                .WithBlock(interceptedBlock);
+
             var argumentListFactoryMethodParams = new List<ArgumentSyntax>();
-            foreach (var parameter in originalMethod.ParameterList.Parameters)
+            foreach (var parameter in method.ParameterList.Parameters)
                 argumentListFactoryMethodParams.Add(Argument(IdentifierName(parameter.Identifier)));
 
             var interceptedVariableIdentifier = Identifier("intercepted");
+
             var methodBody = Block(
                 LocalDeclarationStatement(
                     VariableDeclaration(VarIdentifier())
@@ -244,16 +299,14 @@ public class ProxyGenerator : IIncrementalGenerator
                                         EqualsValueClause(
                                             AssignmentExpression(
                                                 SyntaxKind.CoalesceAssignmentExpression,
-                                                IdentifierName(fieldName),
-                                                SimpleLambdaExpression(
-                                                        Parameter(Identifier("args")))
-                                                    .WithBlock(interceptedBlock))))))),
+                                                IdentifierName(cachedInterceptedFieldName),
+                                                lambdaExpression)))))),
                 ReturnStatement(
                     InvocationExpression(
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 IdentifierName(InterceptorTypeName),
-                                IdentifierName(interceptMethodName)))
+                                IdentifierName(InterceptMethodName)))
                         .WithArgumentList(
                             ArgumentList(
                                 CommaSeparatedList(
@@ -262,30 +315,25 @@ public class ProxyGenerator : IIncrementalGenerator
                                         InvocationExpression(
                                                 MemberAccessExpression(
                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                    QualifiedName(actualLabNs, IdentifierName(argumentListTypeName)),
-                                                    IdentifierName(argumentListNewMethodName)))
+                                                    QualifiedName(_actualLabNs, IdentifierName(ArgumentListTypeName)),
+                                                    IdentifierName(ArgumentListNewMethodName)))
                                             .WithArgumentList(
                                                 ArgumentList(CommaSeparatedList(argumentListFactoryMethodParams))))
                                 )))));
 
-            var interceptedMethod = MethodDeclaration(originalMethod.ReturnType, originalMethod.Identifier)
-                .WithModifiers(
-                    TokenList(accessModifier, Token(SyntaxKind.SealedKeyword), Token(SyntaxKind.OverrideKeyword)))
-                .WithParameterList(originalMethod.ParameterList)
+            var interceptedMethod = MethodDeclaration(method.ReturnType, method.Identifier)
+                .WithModifiers(TokenList(methodModifiers))
+                .WithParameterList(method.ParameterList)
                 .WithBody(methodBody);
 
             classMembers.Add(cachedInterceptedField);
             classMembers.Add(interceptedMethod);
-
-            cachedInterceptedIndex++;
         }
     }
-    private static void AddInterceptor(
-        ICollection<MemberDeclarationSyntax> classMembers,
-        QualifiedNameSyntax actualLabNs)
+    private void AddInterceptor(ICollection<MemberDeclarationSyntax> classMembers)
     {
         const string interceptorFieldName = "_interceptor";
-        var interceptorType = QualifiedName(actualLabNs, IdentifierName(InterceptorTypeName));
+        var interceptorType = QualifiedName(_actualLabNs, IdentifierName(InterceptorTypeName));
         var interceptorField = FieldDeclaration(
                 VariableDeclaration(NullableType(interceptorType))
                     .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier(interceptorFieldName)))))
@@ -326,7 +374,7 @@ public class ProxyGenerator : IIncrementalGenerator
         var bindInterceptorMethod = MethodDeclaration(
                 PredefinedType(Token(SyntaxKind.VoidKeyword)),
                 Identifier(ProxyInterfaceBindMethodName))
-            .WithExplicitInterfaceSpecifier(ExplicitInterfaceSpecifier(QualifiedName(actualLabNs, IdentifierName(ProxyInterfaceTypeName))))
+            .WithExplicitInterfaceSpecifier(ExplicitInterfaceSpecifier(QualifiedName(_actualLabNs, IdentifierName(ProxyInterfaceTypeName))))
             .WithParameterList(ParameterList(
                     SingletonSeparatedList(
                         Parameter(Identifier(interceptorParameterName))

@@ -8,11 +8,11 @@ public static class GenerationExt
     public static INamedTypeSymbol? GetTypeFor<T>(this Compilation compilation)
     {
         var type = typeof(T);
-        var fullName = $"{type.Namespace}.{type.Name}"; 
+        var fullName = $"{type.Namespace}.{type.Name}";
         return compilation.GetTypeByMetadataName(fullName);
     }
 
-    public static (string? Name, TypeSyntax TypeDef) GetNameAndType(this MemberDeclarationSyntax memberDef) 
+    public static (string? Name, TypeSyntax TypeDef) GetNameAndType(this MemberDeclarationSyntax memberDef)
     {
         if (memberDef is FieldDeclarationSyntax f) {
             var typeDef = f.Declaration.Type;
@@ -35,7 +35,7 @@ public static class GenerationExt
         ITypeSymbol attributeType,
         SyntaxList<AttributeListSyntax> attributeLists)
     {
-        var attributes = 
+        var attributes =
             from l in attributeLists
             from a in l.Attributes
             let aType = semanticModel.GetTypeInfo(a).Type
@@ -53,7 +53,7 @@ public static class GenerationExt
         return arguments.SingleOrDefault();
     }
 
-    public static NameSyntax? GetNamespaceName(this ClassDeclarationSyntax classDef)
+    public static NameSyntax? GetNamespaceName(this TypeDeclarationSyntax classDef)
     {
         if (classDef.Parent is NamespaceDeclarationSyntax ns)
             return ns.Name;

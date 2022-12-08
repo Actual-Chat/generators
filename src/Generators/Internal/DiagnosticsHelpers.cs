@@ -42,9 +42,17 @@ public static class DiagnosticsHelpers
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    private static readonly DiagnosticDescriptor GenerateProxyTypeProcessedDescriptor = new(
+        id: "ALG0005",
+        title: "[AutoInject]: type processed.",
+        messageFormat: "[GenerateProxy]: type '{0}' is processed.",
+        category: nameof(ProxyGenerator),
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
+
     // Diagnostics
 
-    public static Diagnostic DebugWarning(string text, Location? location = null) 
+    public static Diagnostic DebugWarning(string text, Location? location = null)
         => Diagnostic.Create(DebugDescriptor, location ?? Location.None, text);
 
     public static Diagnostic DebugWarning(Exception e)
@@ -53,7 +61,7 @@ public static class DiagnosticsHelpers
         var text = (e.ToString() ?? "")
             .Replace("\r\n", " | ", StringComparison.Ordinal)
             .Replace("\n", " | ", StringComparison.Ordinal);
-#else 
+#else
         var text = (e.ToString() ?? "")
             .Replace("\r\n", " | ")
             .Replace("\n", " | ");
@@ -61,7 +69,7 @@ public static class DiagnosticsHelpers
         return DebugWarning(text);
     }
 
-    public static Diagnostic AutoInjectTypeProcessedInfo(ClassDeclarationSyntax classDef) 
+    public static Diagnostic AutoInjectTypeProcessedInfo(ClassDeclarationSyntax classDef)
         => Diagnostic.Create(AutoInjectTypeProcessedDescriptor, classDef.GetLocation(), classDef.Identifier.Text);
 
     public static Diagnostic AutoInjectTypeMustBePartialError(ClassDeclarationSyntax classDef)
@@ -72,4 +80,7 @@ public static class DiagnosticsHelpers
 
     public static Diagnostic AutoInjectTypeHasWrongInitializeError(ClassDeclarationSyntax classDef)
         => Diagnostic.Create(AutoInjectTypeHasWrongInitializeDescriptor, classDef.GetLocation(), classDef.Identifier.Text);
+
+    public static Diagnostic GenerateProxyTypeProcessedInfo(TypeDeclarationSyntax typeDef)
+        => Diagnostic.Create(GenerateProxyTypeProcessedDescriptor, typeDef.GetLocation(), typeDef.Identifier.Text);
 }

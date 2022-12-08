@@ -3,7 +3,7 @@
 // ReSharper disable ArrangeConstructorOrDestructorBody
 namespace ActualLab.Generators;
 
-public class ArgumentList
+public record ArgumentList
 {
     public readonly ArgumentList Empty = new ();
 
@@ -58,7 +58,7 @@ public class ArgumentList
     protected ArgumentList() {}
 }
 
-public class ArgumentList<T0> : ArgumentList
+public record ArgumentList<T0> : ArgumentList
 {
     public T0 Item0 { get; }
 
@@ -68,7 +68,7 @@ public class ArgumentList<T0> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1> : ArgumentList
+public record ArgumentList<T0, T1> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -80,7 +80,7 @@ public class ArgumentList<T0, T1> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2> : ArgumentList
+public record ArgumentList<T0, T1, T2> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -94,7 +94,7 @@ public class ArgumentList<T0, T1, T2> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -110,7 +110,7 @@ public class ArgumentList<T0, T1, T2, T3> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -128,7 +128,7 @@ public class ArgumentList<T0, T1, T2, T3, T4> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -148,7 +148,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -170,7 +170,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -194,7 +194,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -220,7 +220,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -248,7 +248,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> : ArgumentList
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -278,7 +278,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : Argumen
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -310,7 +310,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> : Ar
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -344,7 +344,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -380,7 +380,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12,
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }
@@ -418,7 +418,7 @@ public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12,
     }
 }
 
-public class ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> : ArgumentList
+public record ArgumentList<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> : ArgumentList
 {
     public T0 Item0 { get; }
     public T1 Item1 { get; }

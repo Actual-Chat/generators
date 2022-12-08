@@ -1,5 +1,6 @@
 ﻿namespace ActualLab.Generators.Tests;
 
+[GenerateProxy]
 public interface IChats
 {
     Task<int> Foo(int a, string b);
@@ -28,7 +29,7 @@ public class Chats : IChats
     }
 }
 
-public class ClassProxyExample : Chats, IProxy
+public class ChatsProxyExample : Chats, IProxy
 {
     private Interceptor? _interceptor;
     private Func<ArgumentList, Task<int>>? _cachedIntercepted0;
@@ -57,8 +58,44 @@ public class ClassProxyExample : Chats, IProxy
         _interceptor = interceptor ?? throw new ArgumentNullException("interceptor");
     }
 
-    public ClassProxyExample(int x)
+    public ChatsProxyExample(int x)
         :base(x)
     {
+    }
+}
+
+public class IChatsProxyExample : IChats, IProxy
+{
+    private readonly IChats _subject;
+    private Interceptor? _interceptor;
+    private Func<ArgumentList, Task<int>>? _cachedIntercepted0;
+
+    private Interceptor Interceptor {
+        get {
+            if (_interceptor == null)
+                throw new InvalidOperationException("Bind Proxy with Interceptor first.");
+            return _interceptor;
+        }
+    }
+
+    public Task<int> Foo(int a, string b)
+    {
+        var intercepted = _cachedIntercepted0 ??= args => {
+            var typedArgs = (ArgumentList<int, string>)args;
+            return _subject.Foo(typedArgs.Item0, typedArgs.Item1);
+        };
+        return Interceptor.Intercept(intercepted, ArgumentList.New(a, b));
+    }
+
+    void IProxy.Bind(Interceptor interceptor)
+    {
+        if (_interceptor != null)
+            throw new InvalidOperationException("Interceptor is bound already.");
+        _interceptor = interceptor ?? throw new ArgumentNullException("interceptor");
+    }
+
+    public IChatsProxyExample(IChats subject)
+    {
+        this._subject = subject;
     }
 }

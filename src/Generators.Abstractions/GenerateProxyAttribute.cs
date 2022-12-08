@@ -1,5 +1,5 @@
 namespace ActualLab.Generators;
 
-[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = false)]
 public class GenerateProxyAttribute : Attribute
 { }
