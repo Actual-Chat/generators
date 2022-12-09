@@ -117,6 +117,12 @@ public static class GenerationExt
         return sb.ToString();
     }
 
+    public static bool IsVoid(this TypeSyntax typeSyntax)
+        => typeSyntax is PredefinedTypeSyntax pts && pts.Keyword.IsKind(SyntaxKind.VoidKeyword);
+
+    public static StatementSyntax ToLastBlockStatement(this ExpressionSyntax expression, bool shouldReturn)
+        => shouldReturn ? ReturnStatement(expression) : ExpressionStatement(expression);
+
     // Private methods
 
     private static string Simplify(string shortName, string fullName)

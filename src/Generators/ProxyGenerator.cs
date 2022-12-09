@@ -253,7 +253,8 @@ public class ProxyGenerator : IIncrementalGenerator
                         PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, IdentifierName(MethodInfoLocalVarName)),
                         IdentifierName(InterceptedLocalVarName),
                         NewArgumentList(newArgumentListParams))),
-                ReturnStatement(CallIntercept( method.ReturnType, IdentifierName(InvocationLocalVarName)))
+                CallIntercept(method.ReturnType, IdentifierName(InvocationLocalVarName))
+                    .ToLastBlockStatement(!method.ReturnType.IsVoid())
             );
 
             var interceptedMethod = MethodDeclaration(method.ReturnType, method.Identifier)
@@ -307,17 +308,27 @@ public class ProxyGenerator : IIncrementalGenerator
                         )));
     }
 
-    private FieldDeclarationSyntax CachedInterceptedFieldDeclaration(string fieldName, TypeSyntax funcReturnType)
+    private FieldDeclarationSyntax CachedInterceptedFieldDeclaration(string fieldName, TypeSyntax returnType)
     {
-        var fieldType = NullableType(
-            GenericName(Identifier("global::System.Func"))
+        TypeSyntax fieldType;
+        if (!returnType.IsVoid()) {
+            fieldType = GenericName(Identifier("global::System.Func"))
                 .WithTypeArgumentList(
                     TypeArgumentList(
                         CommaSeparatedList(
                             QualifiedName(_actualLabNs, IdentifierName(ArgumentListTypeName)),
-                            funcReturnType
-                        ))));
-        return PrivateFieldDeclaration(fieldName, fieldType);
+                            returnType
+                        )));
+        }
+        else {
+            fieldType = GenericName(Identifier("global::System.Action"))
+                .WithTypeArgumentList(
+                    TypeArgumentList(
+                        SingletonSeparatedList<TypeSyntax>(
+                            QualifiedName(_actualLabNs, IdentifierName(ArgumentListTypeName))
+                        )));
+        }
+        return PrivateFieldDeclaration(fieldName, NullableType(fieldType));
     }
 
     private static FieldDeclarationSyntax PrivateFieldDeclaration(string fieldName, TypeSyntax fieldType, bool isReadonly = false)
@@ -367,23 +378,26 @@ public class ProxyGenerator : IIncrementalGenerator
             LocalDeclarationStatement(
                 VariableDeclaration(VarIdentifier())
                     .WithVariables(SingletonSeparatedList(typedArgsVariable))),
-            ReturnStatement(
-                InvocationExpression(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            methodSubjectCall,
-                            IdentifierName(method.Identifier.Text)))
-                    .WithArgumentList(ArgumentList(CommaSeparatedList(subjectCallArguments)))));
+            InvocationExpression(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        methodSubjectCall,
+                        IdentifierName(method.Identifier.Text)),
+                    ArgumentList(CommaSeparatedList(subjectCallArguments))
+                )
+                .ToLastBlockStatement(!method.ReturnType.IsVoid())
+        );
 
         var lambdaExpression = SimpleLambdaExpression(Parameter(Identifier(lambdaParameterName)))
             .WithBlock(interceptedBlock);
         return lambdaExpression;
     }
 
-    private InvocationExpressionSyntax CallIntercept(TypeSyntax? genericArguments, params ExpressionSyntax[] arguments)
+    private InvocationExpressionSyntax CallIntercept(TypeSyntax genericArguments, params ExpressionSyntax[] arguments)
     {
-        var methodName = genericArguments == null ? (SimpleNameSyntax)IdentifierName(InterceptMethodName) :
-            GenericName(Identifier(InterceptMethodName))
+        var methodName = genericArguments.IsVoid()
+            ? (SimpleNameSyntax)IdentifierName(InterceptMethodName)
+            : GenericName(Identifier(InterceptMethodName))
                 .WithTypeArgumentList(TypeArgumentList(SingletonSeparatedList(genericArguments)));
         return InvocationExpression(
                 MemberAccessExpression(
@@ -393,19 +407,6 @@ public class ProxyGenerator : IIncrementalGenerator
             .WithArgumentList(
                 ArgumentList(CommaSeparatedList(arguments.Select(Argument))));
     }
-
-    private InvocationExpressionSyntax CallIntercept2(ExpressionSyntax argument)
-        => InvocationExpression(
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    IdentifierName(InterceptorTypeName),
-                    IdentifierName(InterceptMethodName)))
-            .WithArgumentList(
-                ArgumentList(
-                    CommaSeparatedList(
-                        Argument(IdentifierName(InterceptedLocalVarName)),
-                        Argument(argument)
-                    )));
 
     private InvocationExpressionSyntax NewArgumentList(IEnumerable<ArgumentSyntax> newArgumentListParams)
         => InvocationExpression(

@@ -4,6 +4,8 @@ namespace ActualLab.Generators.Tests;
 public interface IChats
 {
     Task<int> Foo(int a, string b);
+
+    void Foo3(int a, string b);
 }
 
 [GenerateProxy]
@@ -12,6 +14,10 @@ public class Chats : IChats
     public virtual Task<int> Foo(int a, string b)
     {
         return Task.FromResult(a);
+    }
+
+    public virtual void Foo3(int a, string b)
+    {
     }
 
     public virtual Task<System.Type> Foo2(System.Int32 a)
@@ -83,7 +89,9 @@ public class IChatsProxyExample : IChats, IProxy
     private readonly IChats _subject;
     private Interceptor? _interceptor;
     private Func<ArgumentList, Task<int>>? _cachedIntercepted0;
+    private Action<ArgumentList>? _cachedIntercepted1;
     private System.Reflection.MethodInfo? _cachedMethodInfo0;
+    private System.Reflection.MethodInfo? _cachedMethodInfo1;
 
     private Interceptor Interceptor {
         get {
@@ -103,6 +111,18 @@ public class IChatsProxyExample : IChats, IProxy
             return _subject.Foo(typedArgs.Item0, typedArgs.Item1);
         };
         return Interceptor.Intercept(intercepted, methodInfo!, _subject, ArgumentList.New(a, b));
+    }
+
+    public virtual void Foo3(int a, string b)
+    {
+        var methodInfo = _cachedMethodInfo1 ??= typeof(Chats).GetMethod("Foo3",
+            GenerateProxyHelper.GetMethodBindingFlags,
+            new [] {typeof(int), typeof(string)});
+        var intercepted = _cachedIntercepted1 ??= args => {
+            var typedArgs = (ArgumentList<int, string>)args;
+            _subject.Foo3(typedArgs.Item0, typedArgs.Item1);
+        };
+        Interceptor.Intercept(intercepted, methodInfo!, _subject, ArgumentList.New(a, b));
     }
 
     void IProxy.Bind(Interceptor interceptor)
