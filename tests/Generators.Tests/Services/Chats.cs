@@ -1,4 +1,4 @@
-﻿namespace ActualLab.Generators.Tests;
+namespace ActualLab.Generators.Tests;
 
 [GenerateProxy]
 public interface IChats
@@ -33,6 +33,7 @@ public class ChatsProxyExample : Chats, IProxy
 {
     private Interceptor? _interceptor;
     private Func<ArgumentList, Task<int>>? _cachedIntercepted0;
+    private System.Reflection.MethodInfo? _cachedMethodInfo0;
 
     private Interceptor Interceptor {
         get {
@@ -49,6 +50,19 @@ public class ChatsProxyExample : Chats, IProxy
             return base.Foo(typedArgs.Item0, typedArgs.Item1);
         };
         return Interceptor.Intercept(intercepted, ArgumentList.New(a, b));
+    }
+
+    public Task<int> Foo2(int a, string b)
+    {
+        var methodInfo = _cachedMethodInfo0 ??= typeof(Chats).GetMethod("Foo",
+            GenerateProxyHelper.GetMethodBindingFlags,
+            new [] { typeof(int), typeof(string) });
+        var intercepted = _cachedIntercepted0 ??= args => {
+            var typedArgs = (ArgumentList<int, string>)args;
+            return base.Foo(typedArgs.Item0, typedArgs.Item1);
+        };
+        var invocation = new Invocation(this, methodInfo!, intercepted, ArgumentList.New(a, b));
+        return Interceptor.Intercept<Task<int>>(invocation);
     }
 
     void IProxy.Bind(Interceptor interceptor)
@@ -69,6 +83,7 @@ public class IChatsProxyExample : IChats, IProxy
     private readonly IChats _subject;
     private Interceptor? _interceptor;
     private Func<ArgumentList, Task<int>>? _cachedIntercepted0;
+    private System.Reflection.MethodInfo? _cachedMethodInfo0;
 
     private Interceptor Interceptor {
         get {
@@ -80,11 +95,14 @@ public class IChatsProxyExample : IChats, IProxy
 
     public Task<int> Foo(int a, string b)
     {
+        var methodInfo = _cachedMethodInfo0 ??= typeof(Chats).GetMethod("Foo",
+            GenerateProxyHelper.GetMethodBindingFlags,
+            new [] {typeof(int), typeof(string)});
         var intercepted = _cachedIntercepted0 ??= args => {
             var typedArgs = (ArgumentList<int, string>)args;
             return _subject.Foo(typedArgs.Item0, typedArgs.Item1);
         };
-        return Interceptor.Intercept(intercepted, ArgumentList.New(a, b));
+        return Interceptor.Intercept(intercepted, methodInfo!, _subject, ArgumentList.New(a, b));
     }
 
     void IProxy.Bind(Interceptor interceptor)

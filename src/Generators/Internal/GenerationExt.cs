@@ -64,13 +64,13 @@ public static class GenerationExt
 
     public static TypeSyntax ToTypeName(this Type type)
     {
-        var name = type.Name.Replace('+', '.');
         if (!type.IsGenericType)
             return ParseTypeName(string.IsNullOrEmpty(type.Namespace)
                 ? $"global::{type.Name}"
                 : $"global::{type.Namespace}.{type.Name}");
 
         // Get the C# representation of the generic type minus its type arguments.
+        var name = type.Name.Replace('+', '.');
         name = name.Substring(0, name.IndexOf("`", StringComparison.Ordinal));
 
         var args = type.GetGenericArguments();
